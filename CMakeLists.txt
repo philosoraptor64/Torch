@@ -234,6 +234,20 @@ if(USE_STANDALONE)
 	target_link_libraries(${PROJECT_NAME} PRIVATE spdlog)
 else()
 	find_package(spdlog REQUIRED)
+	# TORCH_STATIC_SPDLOG (a game module inside a host app): spdlog's static archive, not the shared one
+	if(TORCH_STATIC_SPDLOG AND TARGET spdlog::spdlog)
+		get_target_property(_spdlog_dylib spdlog::spdlog IMPORTED_LOCATION_RELEASE)
+		if(NOT _spdlog_dylib)
+			get_target_property(_spdlog_dylib spdlog::spdlog IMPORTED_LOCATION_NOCONFIG)
+		endif()
+		get_filename_component(_spdlog_dir "${_spdlog_dylib}" DIRECTORY)
+		if(EXISTS "${_spdlog_dir}/libspdlog.a")
+			set_target_properties(spdlog::spdlog PROPERTIES
+				IMPORTED_LOCATION_RELEASE "${_spdlog_dir}/libspdlog.a"
+				IMPORTED_LOCATION_NOCONFIG "${_spdlog_dir}/libspdlog.a"
+				IMPORTED_LOCATION "${_spdlog_dir}/libspdlog.a")
+		endif()
+	endif()
 	target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 endif()
 
